@@ -1,6 +1,7 @@
 #include "World.h"
 #include "Polygon.h"
 #include <chrono>
+#include <unordered_map>
 
 void World::print() {
   auto catposid = catPosition.y*(sideSize/2) + catPosition.x + sideSize*sideSize/2;
@@ -281,4 +282,49 @@ bool World::catWinsOnSpace(Point2D point)
 {
     auto sideOver2 = sideSize / 2;
     return abs(point.x) == sideOver2 || abs(point.y) == sideOver2;
+}
+
+Point2D World::pathDetection() { 
+    std::unordered_map<int, std::unordered_map<int, bool>> visited;
+    std::unordered_map<int, std::unordered_map<int, Point2D>> from;
+
+  std::vector<queueEntry> queue;
+  Point2D cat = getCat();
+  queue.push_back({cat, 0});
+
+  while (!queue.empty()) {
+    std::sort(queue.begin(), queue.end());
+
+    queueEntry first = *queue.begin();
+    queue.erase(queue.begin());
+
+    visited[first.position.x][first.position.y] = true;
+
+    for (Point2D neighbor : neighbors(first.position)) {
+      if (!isValidPosition(neighbor)) {
+        if (!catTurn) {
+          return first.position;
+        } else {
+          Point2D backTrackingPoint = first.position;
+          while (from[backTrackingPoint.x][backTrackingPoint.y] != cat) {
+            backTrackingPoint = from[backTrackingPoint.x][backTrackingPoint.y];
+          }
+          return backTrackingPoint;
+        }
+      }
+
+      if (getContent(neighbor)) {
+        continue;
+      }
+
+      queueEntry newGridPoint = {neighbor, first.weight++};
+      if (!visited[neighbor.x][neighbor.y] &&
+          std::find(queue.begin(), queue.end(), newGridPoint) == queue.end()) {
+        queue.push_back(newGridPoint);
+        from[neighbor.x][neighbor.y] = first.position;
+      }
+    }
+  }
+
+  return Point2D(0, 0);
 }

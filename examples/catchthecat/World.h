@@ -110,6 +110,8 @@ class World: GameObject {
     n.push_back(SE(point));
     return n;
   }
+
+  Point2D pathDetection();
 };
 
 #endif  // WORLD_H
